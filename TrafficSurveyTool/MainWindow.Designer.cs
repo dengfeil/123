@@ -167,6 +167,7 @@
             this.uiLabel23.TabIndex = 8;
             this.uiLabel23.Text = "判断测量开始点";
             this.uiLabel23.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.uiLabel23.Visible = false;
             // 
             // numericUpDownRate
             // 
@@ -184,7 +185,6 @@
             this.numericUpDownRate.Style = Sunny.UI.UIStyle.Custom;
             this.numericUpDownRate.TabIndex = 9;
             this.numericUpDownRate.Text = "0";
-            this.numericUpDownRate.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.numericUpDownRate_KeyPress);
             // 
             // uiLabel22
             // 
@@ -195,6 +195,7 @@
             this.uiLabel22.TabIndex = 8;
             this.uiLabel22.Text = "终点";
             this.uiLabel22.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.uiLabel22.Visible = false;
             // 
             // txtCalc
             // 
@@ -212,6 +213,7 @@
             this.txtCalc.Size = new System.Drawing.Size(63, 34);
             this.txtCalc.TabIndex = 7;
             this.txtCalc.Text = "200";
+            this.txtCalc.Visible = false;
             // 
             // uiLabel7
             // 
@@ -243,6 +245,7 @@
             this.uiLabel15.TabIndex = 8;
             this.uiLabel15.Text = "起点";
             this.uiLabel15.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.uiLabel15.Visible = false;
             // 
             // txtEnd
             // 
@@ -260,6 +263,7 @@
             this.txtEnd.Size = new System.Drawing.Size(63, 34);
             this.txtEnd.TabIndex = 7;
             this.txtEnd.Text = "270";
+            this.txtEnd.Visible = false;
             // 
             // txtStart
             // 
@@ -277,6 +281,7 @@
             this.txtStart.Size = new System.Drawing.Size(61, 34);
             this.txtStart.TabIndex = 7;
             this.txtStart.Text = "15";
+            this.txtStart.Visible = false;
             // 
             // uiTextBox1
             // 
@@ -294,6 +299,7 @@
             this.uiTextBox1.Size = new System.Drawing.Size(63, 34);
             this.uiTextBox1.TabIndex = 7;
             this.uiTextBox1.Text = "50";
+            this.uiTextBox1.Visible = false;
             // 
             // tbStartDistance
             // 
@@ -311,6 +317,7 @@
             this.tbStartDistance.Size = new System.Drawing.Size(74, 34);
             this.tbStartDistance.TabIndex = 7;
             this.tbStartDistance.Text = "6400";
+            this.tbStartDistance.Visible = false;
             // 
             // txtLength
             // 
@@ -326,6 +333,7 @@
             this.txtLength.Size = new System.Drawing.Size(74, 34);
             this.txtLength.TabIndex = 7;
             this.txtLength.Text = "0";
+            this.txtLength.Visible = false;
             // 
             // checkBoxHexDisplay
             // 
@@ -403,6 +411,7 @@
             this.uiLabel3.TabIndex = 1;
             this.uiLabel3.Text = "原点距离：";
             this.uiLabel3.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.uiLabel3.Visible = false;
             // 
             // uiLabel2
             // 
@@ -413,6 +422,7 @@
             this.uiLabel2.TabIndex = 1;
             this.uiLabel2.Text = "测量尺寸：";
             this.uiLabel2.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.uiLabel2.Visible = false;
             // 
             // uiLabel6
             // 
@@ -423,6 +433,7 @@
             this.uiLabel6.TabIndex = 1;
             this.uiLabel6.Text = "接收信息间隔(ms)";
             this.uiLabel6.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.uiLabel6.Visible = false;
             // 
             // cbType
             // 
@@ -478,9 +489,10 @@
             this.chartUDPDisp.TabIndex = 1;
             this.chartUDPDisp.Text = "chart2";
             this.chartUDPDisp.DoubleClick += new System.EventHandler(this.chartTCPDisp_DoubleClick);
+            this.chartUDPDisp.KeyDown += new System.Windows.Forms.KeyEventHandler(this.chartUDPDisp_KeyDown);
             this.chartUDPDisp.MouseDown += new System.Windows.Forms.MouseEventHandler(this.chartTCPDisp_MouseDown);
             this.chartUDPDisp.MouseMove += new System.Windows.Forms.MouseEventHandler(this.chartTCPDisp_MouseMove);
-            this.chartUDPDisp.MouseWheel += new System.Windows.Forms.MouseEventHandler(this.chart_MouseWheelX);
+            this.chartUDPDisp.MouseUp += new System.Windows.Forms.MouseEventHandler(this.chartUDPDisp_MouseUp);
             // 
             // uiContextMenuStrip1
             // 

@@ -29,7 +29,8 @@ namespace TrafficSurveyTool
             RefreshPort();
             toolStripStatusLabel1.Text = "The author of the software is Jackey";
             //dataGridView1.RowsDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
-
+            this.chartUDPDisp.MouseWheel += new System.Windows.Forms.MouseEventHandler(this.chart_MouseWheelX);
+            //this.MouseWheel += new System.Windows.Forms.MouseEventHandler(this.chart_MouseWheelX);
         }
 
         private void MainWindow_FormClosed(object sender, FormClosedEventArgs e)
@@ -294,7 +295,7 @@ namespace TrafficSurveyTool
                             //string[] dataString = MidStrEx(RecvDataText, splitStr, splitStr).Split(' ');//截取激光雷达数据
 
                             string bbb = RecvDataText.Substring(0, RecvDataText.IndexOf(splitStr));//"FC FD FE FF"
-                            string ss = CutByteString(RecvDataText, bbb.Length, 824 * 3 - 1);
+                            string ss;//= CutByteString(RecvDataText, bbb.Length, 824 * 3 - 1);
                             string[] dataString = null;// = MidStrEx(ss + " " + splitStr , splitStr, splitStr).Split(' ');//截取激光雷达数据
 
                             if (cbType.SelectedIndex == 1)
@@ -379,7 +380,7 @@ namespace TrafficSurveyTool
                 ChartTest = chartUDPDisp;
 
                 InitChart(ref this.ChartTest);
-
+                
                 StartTestChart();
             }
             catch (Exception ex) { Console.WriteLine("[Error] 开始显示实时点云功能错误 " + ex.Message); }
@@ -411,22 +412,24 @@ namespace TrafficSurveyTool
             {
                 SendCommand("AA 01 80 03 00 00 00 00 00 00 00 00 00 00 FF");
                 bAccpet = false;
+
+                //this.chartUDPDisp.MouseWheel -= new System.Windows.Forms.MouseEventHandler(this.chart_MouseWheelX);
                 //UDPCommand.Enabled = false;
                 //UDPSendCommand.Enabled = false;
                 //Thread.Sleep(50);
                 ////停止主监听线程
-                //if (null != getRecevice)
-                //{
-                //    if (getRecevice.IsAlive)
-                //    {
-                //        if (!getRecevice.Join(500))
-                //        {
-                //            //关闭线程
-                //            getRecevice.Abort();
-                //        }
-                //    }
-                //    getRecevice = null;
-                //}
+                if (null != getRecevice)
+                {
+                    if (getRecevice.IsAlive)
+                    {
+                        if (!getRecevice.Join(500))
+                        {
+                            //关闭线程
+                            getRecevice.Abort();
+                        }
+                    }
+                    getRecevice = null;
+                }
             }
             catch { }
 
@@ -812,7 +815,7 @@ namespace TrafficSurveyTool
                 double Xsize = chart.ChartAreas[0].AxisX.Maximum - chart.ChartAreas[0].AxisX.Minimum;
                 if (e.Delta > 0)    //滚轮上滑放大
                 {
-                    if (Xsize > 50)     //缩放视图不小于5
+                    if (Xsize > 200)     //缩放视图不小于5
                     {
                         if ((xmouseponit >= chart.ChartAreas[0].AxisX.ScaleView.ViewMinimum) && (xmouseponit <= chart.ChartAreas[0].AxisX.ScaleView.ViewMaximum)) //判断鼠标位置不在x轴两侧边沿
                         {
@@ -831,66 +834,78 @@ namespace TrafficSurveyTool
                 }
                 else     //滚轮下滑缩小
                 {
-
-                    //if (Xsize < chart.ChartAreas[0].AxisX.Maximum)
+                    try
                     {
                         double xspmovepoints = Math.Round((zoomfactor - 1) * (xmouseponit - xstartpoint), 1);   //计算x轴起点需要左移距离
                         double xepmovepoints = Math.Round((zoomfactor - 1) * (xendpoint - xmouseponit), 1);    //计算x轴末端右移距离
 
-
-                        if (chart.ChartAreas[0].AxisX.ScaleView.Size + xspmovepoints + xepmovepoints < chart.ChartAreas[0].AxisX.Maximum)  //判断缩放视图尺寸是否超过曲线尺寸
+                        
                         {
-                            if ((xstartpoint - xspmovepoints <= chart.ChartAreas[0].AxisX.Minimum) || (xepmovepoints + xendpoint >= chart.ChartAreas[0].AxisX.Maximum))  //判断缩放值是否达到曲线边界
+                            if (chart.ChartAreas[0].AxisX.ScaleView.Size + xspmovepoints + xepmovepoints < chart.ChartAreas[0].AxisX.Maximum)  //判断缩放视图尺寸是否超过曲线尺寸
                             {
-                                if (xstartpoint - xspmovepoints <= chart.ChartAreas[0].AxisX.Minimum)    //缩放视图起点小于等于0
+                                if ((xstartpoint - xspmovepoints <= chart.ChartAreas[0].AxisX.Minimum) || (xepmovepoints + xendpoint >= chart.ChartAreas[0].AxisX.Maximum))  //判断缩放值是否达到曲线边界
                                 {
-                                    xspmovepoints = xstartpoint;
-                                    chart.ChartAreas[0].AxisX.ScaleView.Position = chart.ChartAreas[0].AxisX.Minimum;    //缩放视图起点设为0
+                                    if (xstartpoint - xspmovepoints <= chart.ChartAreas[0].AxisX.Minimum)    //缩放视图起点小于等于0
+                                    {
+                                        xspmovepoints = xstartpoint;
+                                        chart.ChartAreas[0].AxisX.ScaleView.Position = chart.ChartAreas[0].AxisX.Minimum;    //缩放视图起点设为0
+                                    }
+                                    else
+                                    {
+                                        //chart.ChartAreas[0].AxisX.ScaleView.Position -= (int)xspmovepoints;  //缩放视图起点大于0，按比例缩放
+                                        chart.ChartAreas[0].AxisX.Minimum -= (int)xmouseponit;
+                                        chart.ChartAreas[0].AxisX.Maximum -= (int)xmouseponit;
+                                    }
+                                    if (xepmovepoints + xendpoint >= chart.ChartAreas[0].AxisX.Maximum)  //缩放视图终点大于曲线最大值
+                                    {
+                                        chart.ChartAreas[0].AxisX.ScaleView.Size = chart.ChartAreas[0].AxisX.Maximum - chart.ChartAreas[0].AxisX.ScaleView.Position;  //设置缩放视图尺寸=曲线最大值-视图起点值
+                                        chart.ChartAreas[0].AxisX.Maximum -= (int)xmouseponit;
+                                        chart.ChartAreas[0].AxisX.Minimum -= (int)xmouseponit;
+                                    }
+                                    else
+                                    {
+                                        //double viewsizechange = (int)(xspmovepoints + xepmovepoints);         //计算x轴缩放视图缩小变化尺寸
+                                        //chart.ChartAreas[0].AxisX.ScaleView.Size += (int)viewsizechange;   //按比例缩放视图大小
+                                        chart.ChartAreas[0].AxisY.Minimum *= zoomfactor;
+                                        chart.ChartAreas[0].AxisY.Maximum *= zoomfactor;
+
+                                        //chart.ChartAreas[0].AxisX.Minimum -= chart.ChartAreas[0].AxisX.Minimum * (zoomfactor - 1);
+                                        //chart.ChartAreas[0].AxisX.Maximum += chart.ChartAreas[0].AxisX.Maximum * (zoomfactor - 1);
+                                    }
                                 }
                                 else
                                 {
-                                    //chart.ChartAreas[0].AxisX.ScaleView.Position -= (int)xspmovepoints;  //缩放视图起点大于0，按比例缩放
-                                    chart.ChartAreas[0].AxisX.Minimum -= (int)xmouseponit;
-                                    chart.ChartAreas[0].AxisX.Maximum -= (int)xmouseponit;
-                                }
-                                if (xepmovepoints + xendpoint >= chart.ChartAreas[0].AxisX.Maximum)  //缩放视图终点大于曲线最大值
-                                {
-                                    chart.ChartAreas[0].AxisX.ScaleView.Size = chart.ChartAreas[0].AxisX.Maximum - chart.ChartAreas[0].AxisX.ScaleView.Position;  //设置缩放视图尺寸=曲线最大值-视图起点值
-                                    chart.ChartAreas[0].AxisX.Maximum -= (int)xmouseponit;
-                                    chart.ChartAreas[0].AxisX.Minimum -= (int)xmouseponit;
-                                }
-                                else
-                                {
-                                    //double viewsizechange = (int)(xspmovepoints + xepmovepoints);         //计算x轴缩放视图缩小变化尺寸
+                                    //double viewsizechange = xspmovepoints + xepmovepoints;         //计算x轴缩放视图缩小变化尺寸
                                     //chart.ChartAreas[0].AxisX.ScaleView.Size += (int)viewsizechange;   //按比例缩放视图大小
-                                    chart.ChartAreas[0].AxisY.Minimum *= zoomfactor;
-                                    chart.ChartAreas[0].AxisY.Maximum *= zoomfactor;
+                                    //chart.ChartAreas[0].AxisX.ScaleView.Position -= (int)xspmovepoints;   //按比例缩放视图大小
+                                    //uiTrackBarRate.Value -= (int)xspmovepoints;
+                                    //chart.ChartAreas[0].AxisX.Minimum -= (int)xmouseponit;
+                                    //chart.ChartAreas[0].AxisX.Maximum -= (int)xmouseponit;
+                                    chart.ChartAreas[0].AxisX.Minimum *= zoomfactor;
+                                    chart.ChartAreas[0].AxisX.Maximum *= zoomfactor;
+
+                                    //chart.ChartAreas[0].AxisX.Minimum -= chart.ChartAreas[0].AxisX.Minimum * (zoomfactor - 1);
+                                    //chart.ChartAreas[0].AxisX.Maximum += chart.ChartAreas[0].AxisX.Maximum * (zoomfactor - 1);
+
                                 }
                             }
                             else
                             {
-                                //double viewsizechange = xspmovepoints + xepmovepoints;         //计算x轴缩放视图缩小变化尺寸
-                                //chart.ChartAreas[0].AxisX.ScaleView.Size += (int)viewsizechange;   //按比例缩放视图大小
-                                //chart.ChartAreas[0].AxisX.ScaleView.Position -= (int)xspmovepoints;   //按比例缩放视图大小
-                                //uiTrackBarRate.Value -= (int)xspmovepoints;
+                                //chart.ChartAreas[0].AxisX.ScaleView.Size = chart.ChartAreas[0].AxisX.Maximum - chart.ChartAreas[0].AxisX.Minimum;
+                                //chart.ChartAreas[0].AxisX.ScaleView.Position = chart.ChartAreas[0].AxisX.Minimum;
                                 //chart.ChartAreas[0].AxisX.Minimum -= (int)xmouseponit;
                                 //chart.ChartAreas[0].AxisX.Maximum -= (int)xmouseponit;
                                 chart.ChartAreas[0].AxisX.Minimum *= zoomfactor;
                                 chart.ChartAreas[0].AxisX.Maximum *= zoomfactor;
 
+                                //chart.ChartAreas[0].AxisX.Minimum -= chart.ChartAreas[0].AxisX.Minimum * (zoomfactor - 1);
+                                //chart.ChartAreas[0].AxisX.Maximum += chart.ChartAreas[0].AxisX.Maximum * (zoomfactor - 1);
+                                isZoom = true;
                             }
                         }
-                        else
-                        {
-                            //chart.ChartAreas[0].AxisX.ScaleView.Size = chart.ChartAreas[0].AxisX.Maximum - chart.ChartAreas[0].AxisX.Minimum;
-                            //chart.ChartAreas[0].AxisX.ScaleView.Position = chart.ChartAreas[0].AxisX.Minimum;
-                            //chart.ChartAreas[0].AxisX.Minimum -= (int)xmouseponit;
-                            //chart.ChartAreas[0].AxisX.Maximum -= (int)xmouseponit;
-                            chart.ChartAreas[0].AxisX.Minimum *= zoomfactor;
-                            chart.ChartAreas[0].AxisX.Maximum *= zoomfactor;
-                            isZoom = true;
-                        }
+                        
                     }
+                    catch { }
                 }
                 #endregion
 
@@ -903,7 +918,7 @@ namespace TrafficSurveyTool
                 double Ysize = chart.ChartAreas[0].AxisY.Maximum - chart.ChartAreas[0].AxisY.Minimum;
                 if (e.Delta > 0)    //滚轮上滑放大
                 {
-                    if (Ysize > 50)     //缩放视图不小于5
+                    if (Ysize > 200)     //缩放视图不小于5
                     {
                         if ((ymouseponit >= chart.ChartAreas[0].AxisY.ScaleView.ViewMinimum) && (ymouseponit <= chart.ChartAreas[0].AxisY.ScaleView.ViewMaximum)) //判断鼠标位置不在x轴两侧边沿
                         {
@@ -922,6 +937,7 @@ namespace TrafficSurveyTool
                 else     //滚轮下滑缩小
                 {
                     //if (Ysize < chart.ChartAreas[0].AxisY.Maximum)
+                    try
                     {
                         double yspmovepoints = Math.Round((zoomfactor - 1) * (ymouseponit - ystartpoint), 1);   //计算x轴起点需要左移距离
                         double yepmovepoints = Math.Round((zoomfactor - 1) * (yendpoint - ymouseponit), 1);    //计算x轴末端右移距离
@@ -953,6 +969,9 @@ namespace TrafficSurveyTool
                                     //chart.ChartAreas[0].AxisY.ScaleView.Size += (int)viewsizechange;   //按比例缩放视图大小
                                     chart.ChartAreas[0].AxisY.Minimum *= zoomfactor;
                                     chart.ChartAreas[0].AxisY.Maximum *= zoomfactor;
+
+                                    //chart.ChartAreas[0].AxisY.Minimum -= chart.ChartAreas[0].AxisY.Minimum * (zoomfactor - 1);
+                                    //chart.ChartAreas[0].AxisY.Maximum += chart.ChartAreas[0].AxisY.Maximum * (zoomfactor - 1);
                                 }
                             }
                             else
@@ -964,6 +983,9 @@ namespace TrafficSurveyTool
                                 //chart.ChartAreas[0].AxisY.Minimum -= (int)ymouseponit;
                                 chart.ChartAreas[0].AxisY.Minimum *= zoomfactor;
                                 chart.ChartAreas[0].AxisY.Maximum *= zoomfactor;
+
+                                //chart.ChartAreas[0].AxisY.Minimum -= chart.ChartAreas[0].AxisY.Minimum * (zoomfactor - 1);
+                                //chart.ChartAreas[0].AxisY.Maximum += chart.ChartAreas[0].AxisY.Maximum * (zoomfactor - 1);
                             }
                         }
                         else
@@ -974,8 +996,12 @@ namespace TrafficSurveyTool
                             //chart.ChartAreas[0].AxisY.Maximum -= (int)ymouseponit;
                             chart.ChartAreas[0].AxisY.Minimum *= zoomfactor;
                             chart.ChartAreas[0].AxisY.Maximum *= zoomfactor;
+
+                            //chart.ChartAreas[0].AxisY.Minimum -= (60000 + chart.ChartAreas[0].AxisY.Minimum) * (zoomfactor - 1);
+                            //chart.ChartAreas[0].AxisY.Maximum += chart.ChartAreas[0].AxisY.Maximum * (zoomfactor - 1);
                         }
                     }
+                    catch { }
                 }
                 #endregion
 
@@ -984,10 +1010,23 @@ namespace TrafficSurveyTool
                 if (chart.ChartAreas[0].AxisX.Minimum < -60000)
                     chart.ChartAreas[0].AxisX.Minimum = -60000;
 
+                if (chart.ChartAreas[0].AxisX.Maximum < -60000)
+                    chart.ChartAreas[0].AxisX.Maximum = -60000 + 200;
+                if (chart.ChartAreas[0].AxisX.Minimum > 60000)
+                    chart.ChartAreas[0].AxisX.Minimum = 60000 - 200;
+
                 if (chart.ChartAreas[0].AxisY.Maximum > 60000)
                     chart.ChartAreas[0].AxisY.Maximum = 60000;
                 if (chart.ChartAreas[0].AxisY.Minimum < -60000)
                     chart.ChartAreas[0].AxisY.Minimum = -60000;
+
+                if (chart.ChartAreas[0].AxisY.Maximum < -60000)
+                    chart.ChartAreas[0].AxisY.Maximum = -60000 + 200;
+                if (chart.ChartAreas[0].AxisY.Minimum > 60000)
+                    chart.ChartAreas[0].AxisY.Minimum = 60000 - 200;
+
+
+
             }
             catch (Exception ex) { LogError("放缩异常：" + ex.Message); }
         }
@@ -1005,12 +1044,12 @@ namespace TrafficSurveyTool
 
         double downPtX; //记录鼠标按下的位置
         double downPtY;//记录鼠标按下的位置
-
+        bool isMouseDown = false;
         private void chartTCPDisp_MouseDown(object sender, MouseEventArgs e)
         {
             //查找鼠标点击的位置，判断是否超出chart图界限
             Chart chart = (Chart)sender;
-           
+            isMouseDown = true;
             //if (chart.ChartAreas[0].AxisY.ScaleView.Size > 5)     //缩放视图不小于5
             {
                 double xmouseponit = chart.ChartAreas[0].AxisX.PixelPositionToValue(e.X);    //获取鼠标在chart中x坐标
@@ -1030,17 +1069,43 @@ namespace TrafficSurveyTool
                 }
             }
 
+            this.chartUDPDisp.Focus();
+
         }
 
         //鼠标移动
         private void chartTCPDisp_MouseMove(object sender, MouseEventArgs e)
         {
-            Chart chart = (Chart)sender;
-            if (e.Button == MouseButtons.Left)
+            if (isMouseDown)
             {
-                try
+                Chart chart = (Chart)sender;
+                if (e.Button == MouseButtons.Left)
                 {
-                    //if (chart.ChartAreas[0].AxisY.ScaleView.Size > 5)     //缩放视图不小于5
+                    try
+                    {
+                        //if (chart.ChartAreas[0].AxisY.ScaleView.Size > 5)     //缩放视图不小于5
+                        {
+                            double xmouseponit = chart.ChartAreas[0].AxisX.PixelPositionToValue(e.X);    //获取鼠标在chart中x坐标
+                            double ymouseponit = chart.ChartAreas[0].AxisY.PixelPositionToValue(e.Y);    //获取鼠标在chart中y坐标
+                            if ((xmouseponit >= chart.ChartAreas[0].AxisX.ScaleView.ViewMinimum) &&
+                                (xmouseponit <= chart.ChartAreas[0].AxisX.ScaleView.ViewMaximum) &&
+                                (ymouseponit >= chart.ChartAreas[0].AxisY.ScaleView.ViewMinimum) &&
+                                (ymouseponit <= chart.ChartAreas[0].AxisY.ScaleView.ViewMaximum)) //判断鼠标位置不在x,y轴两侧边沿
+                            {
+                                chart.ChartAreas[0].AxisX.ScaleView.Position -= (int)(xmouseponit - downPtX);
+                                chart.ChartAreas[0].AxisY.Minimum -= (int)(ymouseponit - downPtY);
+                                chart.ChartAreas[0].AxisY.Maximum -= (int)(ymouseponit - downPtY);
+                                chart.ChartAreas[0].AxisX.Minimum -= (int)(xmouseponit - downPtX);
+                                chart.ChartAreas[0].AxisX.Maximum -= (int)(xmouseponit - downPtX);
+                            }
+                        }
+                    }
+                    catch (Exception ex) { updaRichBox("[Error] 鼠标移动错误！ " + ex.Message); }
+
+                }
+                else if (e.Button == MouseButtons.Right)
+                {
+                    try
                     {
                         double xmouseponit = chart.ChartAreas[0].AxisX.PixelPositionToValue(e.X);    //获取鼠标在chart中x坐标
                         double ymouseponit = chart.ChartAreas[0].AxisY.PixelPositionToValue(e.Y);    //获取鼠标在chart中y坐标
@@ -1049,48 +1114,29 @@ namespace TrafficSurveyTool
                             (ymouseponit >= chart.ChartAreas[0].AxisY.ScaleView.ViewMinimum) &&
                             (ymouseponit <= chart.ChartAreas[0].AxisY.ScaleView.ViewMaximum)) //判断鼠标位置不在x,y轴两侧边沿
                         {
-                            chart.ChartAreas[0].AxisX.ScaleView.Position -= (int)(xmouseponit - downPtX);
-                            chart.ChartAreas[0].AxisY.Minimum -= (int)(ymouseponit - downPtY);
-                            chart.ChartAreas[0].AxisY.Maximum -= (int)(ymouseponit - downPtY);
-                            chart.ChartAreas[0].AxisX.Minimum -= (int)(xmouseponit - downPtX);
-                            chart.ChartAreas[0].AxisX.Maximum -= (int)(xmouseponit - downPtX);
+                            //计算起始点和终点角度
+                            double angleEnd = Math.Atan2((ymouseponit - 0), (xmouseponit - 0)) * 180 / Math.PI;
+                            double angleStart = Math.Atan2((downPtY - 0), (downPtX - 0)) * 180 / Math.PI;
+                            //超过180度需要考虑角度转换
+                            if (angleEnd - angleStart < -30)
+                                angleEnd += 360;
+                            else if (angleEnd - angleStart > 30)
+                                angleEnd -= 360;
+
+                            uiTrackBarRotate.Value += (int)((angleEnd - angleStart) * 10);
+                            downPtY = ymouseponit;//移动点角度赋予起始点，避免在累加过程中累加数值越来越大
+                            downPtX = xmouseponit;//移动点角度赋予起始点，避免在累加过程中累加数值越来越大
+
                         }
                     }
+                    catch (Exception ex) { updaRichBox("[Error] 图像旋转错误！ " + ex.Message); }
                 }
-                catch (Exception ex) { updaRichBox("[Error] 鼠标移动错误！ " + ex.Message); }
-
             }
-            else if (e.Button == MouseButtons.Right)
-            {
-                try
-                {
-                    double xmouseponit = chart.ChartAreas[0].AxisX.PixelPositionToValue(e.X);    //获取鼠标在chart中x坐标
-                    double ymouseponit = chart.ChartAreas[0].AxisY.PixelPositionToValue(e.Y);    //获取鼠标在chart中y坐标
-                    if ((xmouseponit >= chart.ChartAreas[0].AxisX.ScaleView.ViewMinimum) &&
-                        (xmouseponit <= chart.ChartAreas[0].AxisX.ScaleView.ViewMaximum) &&
-                        (ymouseponit >= chart.ChartAreas[0].AxisY.ScaleView.ViewMinimum) &&
-                        (ymouseponit <= chart.ChartAreas[0].AxisY.ScaleView.ViewMaximum)) //判断鼠标位置不在x,y轴两侧边沿
-                    {
-                        //计算起始点和终点角度
-                        double angleEnd = Math.Atan2((ymouseponit - 0), (xmouseponit - 0)) * 180 / Math.PI;
-                        double angleStart = Math.Atan2((downPtY - 0), (downPtX - 0)) * 180 / Math.PI;
-                        //超过180度需要考虑角度转换
-                        if (angleEnd - angleStart < -30)
-                            angleEnd+=360;
-                        else if(angleEnd - angleStart > 30)
-                            angleEnd -= 360;
-
-                        uiTrackBarRotate.Value += (int)((angleEnd - angleStart) * 10);
-                        downPtY = ymouseponit;//移动点角度赋予起始点，避免在累加过程中累加数值越来越大
-                        downPtX = xmouseponit;//移动点角度赋予起始点，避免在累加过程中累加数值越来越大
-
-                    }
-                }
-                catch (Exception ex) { updaRichBox("[Error] 图像旋转错误！ " + ex.Message); }
-            }
-
         }
-
+        private void chartUDPDisp_MouseUp(object sender, MouseEventArgs e)
+        {
+            isMouseDown = false;
+        }
         /// <summary>
         ///文本框与滚动条数据绑定
         /// </summary>
@@ -1143,6 +1189,28 @@ namespace TrafficSurveyTool
             {
                 uiTrackBarRotate.Value = (int)(double.Parse(numericUpDownRate.Text) * 10);
             }
+
+            double zoomfactor = 1.5;
+            if (e.KeyChar == 90)
+            {
+                this.chartUDPDisp.ChartAreas[0].AxisY.Minimum *= zoomfactor;
+                this.chartUDPDisp.ChartAreas[0].AxisY.Maximum *= zoomfactor;
+            }
+            else if (e.KeyChar == 88)
+            {
+                this.chartUDPDisp.ChartAreas[0].AxisY.Minimum /= zoomfactor;
+                this.chartUDPDisp.ChartAreas[0].AxisY.Maximum /= zoomfactor;
+            }
+
+            if (this.chartUDPDisp.ChartAreas[0].AxisX.Maximum > 60000)
+                this.chartUDPDisp.ChartAreas[0].AxisX.Maximum = 60000;
+            if (this.chartUDPDisp.ChartAreas[0].AxisX.Minimum < -60000)
+                this.chartUDPDisp.ChartAreas[0].AxisX.Minimum = -60000;
+
+            if (this.chartUDPDisp.ChartAreas[0].AxisY.Maximum > 60000)
+                this.chartUDPDisp.ChartAreas[0].AxisY.Maximum = 60000;
+            if (this.chartUDPDisp.ChartAreas[0].AxisY.Minimum < -60000)
+                this.chartUDPDisp.ChartAreas[0].AxisY.Minimum = -60000;
         }
 
         /// <summary>
@@ -1283,5 +1351,134 @@ namespace TrafficSurveyTool
                 txtCalc.Text = "300";
             }
         }
+
+        private void chartUDPDisp_KeyDown(object sender, KeyEventArgs e)
+        {
+            try
+            {
+                double zoomfactor = 1.5;
+                if (e.Modifiers.CompareTo(Keys.Control) == 0 && e.KeyCode == Keys.OemMinus)
+                {
+                    //处理逻辑
+                    this.chartUDPDisp.ChartAreas[0].AxisY.Minimum *= zoomfactor;
+                    this.chartUDPDisp.ChartAreas[0].AxisY.Maximum *= zoomfactor;
+                    this.chartUDPDisp.ChartAreas[0].AxisX.Minimum *= zoomfactor;
+                    this.chartUDPDisp.ChartAreas[0].AxisX.Maximum *= zoomfactor;
+                }
+                else if (e.Modifiers.CompareTo(Keys.Control) == 0 && e.KeyCode == Keys.Oemplus)
+                {
+                    this.chartUDPDisp.ChartAreas[0].AxisY.Minimum /= zoomfactor;
+                    this.chartUDPDisp.ChartAreas[0].AxisY.Maximum /= zoomfactor;
+                    this.chartUDPDisp.ChartAreas[0].AxisX.Minimum /= zoomfactor;
+                    this.chartUDPDisp.ChartAreas[0].AxisX.Maximum /= zoomfactor;
+                }
+                //if (e.KeyCode == Keys.Z)
+                //{
+                //    this.chartUDPDisp.ChartAreas[0].AxisY.Minimum *= zoomfactor;
+                //    this.chartUDPDisp.ChartAreas[0].AxisY.Maximum *= zoomfactor;
+                //    this.chartUDPDisp.ChartAreas[0].AxisX.Minimum *= zoomfactor;
+                //    this.chartUDPDisp.ChartAreas[0].AxisX.Maximum *= zoomfactor;
+                //}
+                //else if (e.KeyCode == Keys.X)
+                //{
+                //    this.chartUDPDisp.ChartAreas[0].AxisY.Minimum /= zoomfactor;
+                //    this.chartUDPDisp.ChartAreas[0].AxisY.Maximum /= zoomfactor;
+                //    this.chartUDPDisp.ChartAreas[0].AxisX.Minimum /= zoomfactor;
+                //    this.chartUDPDisp.ChartAreas[0].AxisX.Maximum /= zoomfactor;
+                //}
+
+                if (this.chartUDPDisp.ChartAreas[0].AxisX.Maximum > 60000)
+                    this.chartUDPDisp.ChartAreas[0].AxisX.Maximum = 60000;
+                if (this.chartUDPDisp.ChartAreas[0].AxisX.Minimum < -60000)
+                    this.chartUDPDisp.ChartAreas[0].AxisX.Minimum = -60000;
+
+                if (this.chartUDPDisp.ChartAreas[0].AxisY.Maximum > 60000)
+                    this.chartUDPDisp.ChartAreas[0].AxisY.Maximum = 60000;
+                if (this.chartUDPDisp.ChartAreas[0].AxisY.Minimum < -60000)
+                    this.chartUDPDisp.ChartAreas[0].AxisY.Minimum = -60000;
+            }
+            catch { }
+        }
+        private void chartUDPDisp_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            double zoomfactor = 1.5;
+            if (e.KeyChar == 90)
+            {
+                this.chartUDPDisp.ChartAreas[0].AxisY.Minimum *= zoomfactor;
+                this.chartUDPDisp.ChartAreas[0].AxisY.Maximum *= zoomfactor;
+            }
+            else if (e.KeyChar == 88)
+            {
+                this.chartUDPDisp.ChartAreas[0].AxisY.Minimum /= zoomfactor;
+                this.chartUDPDisp.ChartAreas[0].AxisY.Maximum /= zoomfactor;
+            }
+
+            if (this.chartUDPDisp.ChartAreas[0].AxisX.Maximum > 60000)
+                this.chartUDPDisp.ChartAreas[0].AxisX.Maximum = 60000;
+            if (this.chartUDPDisp.ChartAreas[0].AxisX.Minimum < -60000)
+                this.chartUDPDisp.ChartAreas[0].AxisX.Minimum = -60000;
+
+            if (this.chartUDPDisp.ChartAreas[0].AxisY.Maximum > 60000)
+                this.chartUDPDisp.ChartAreas[0].AxisY.Maximum = 60000;
+            if (this.chartUDPDisp.ChartAreas[0].AxisY.Minimum < -60000)
+                this.chartUDPDisp.ChartAreas[0].AxisY.Minimum = -60000;
+        }
+
+
+        private void uiButton2_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                double zoomfactor = 1.5;
+
+                this.chartUDPDisp.ChartAreas[0].AxisX.Minimum *= zoomfactor;
+                this.chartUDPDisp.ChartAreas[0].AxisX.Maximum *= zoomfactor;
+                this.chartUDPDisp.ChartAreas[0].AxisY.Minimum *= zoomfactor;
+                this.chartUDPDisp.ChartAreas[0].AxisY.Maximum *= zoomfactor;
+
+                if (this.chartUDPDisp.ChartAreas[0].AxisX.Maximum > 60000)
+                    this.chartUDPDisp.ChartAreas[0].AxisX.Maximum = 60000;
+                if (this.chartUDPDisp.ChartAreas[0].AxisX.Minimum < -60000)
+                    this.chartUDPDisp.ChartAreas[0].AxisX.Minimum = -60000;
+
+                if (this.chartUDPDisp.ChartAreas[0].AxisY.Maximum > 60000)
+                    this.chartUDPDisp.ChartAreas[0].AxisY.Maximum = 60000;
+                if (this.chartUDPDisp.ChartAreas[0].AxisY.Minimum < -60000)
+                    this.chartUDPDisp.ChartAreas[0].AxisY.Minimum = -60000;
+            }
+            catch { }
+        }
+
+        private void uiButton1_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                double zoomfactor = 1.5;
+
+                if (this.chartUDPDisp.ChartAreas[0].AxisX.Maximum <= 60000
+                    && this.chartUDPDisp.ChartAreas[0].AxisX.Minimum >= -60000
+                        && this.chartUDPDisp.ChartAreas[0].AxisY.Maximum <= 60000
+                        && this.chartUDPDisp.ChartAreas[0].AxisY.Minimum >= -60000)
+                {
+                    this.chartUDPDisp.ChartAreas[0].AxisY.Minimum /= zoomfactor;
+                    this.chartUDPDisp.ChartAreas[0].AxisY.Maximum /= zoomfactor;
+                    this.chartUDPDisp.ChartAreas[0].AxisX.Minimum /= zoomfactor;
+                    this.chartUDPDisp.ChartAreas[0].AxisX.Maximum /= zoomfactor;
+                }
+
+                if (this.chartUDPDisp.ChartAreas[0].AxisX.Maximum > 60000)
+                    this.chartUDPDisp.ChartAreas[0].AxisX.Maximum = 60000;
+                if (this.chartUDPDisp.ChartAreas[0].AxisX.Minimum < -60000)
+                    this.chartUDPDisp.ChartAreas[0].AxisX.Minimum = -60000;
+
+                if (this.chartUDPDisp.ChartAreas[0].AxisY.Maximum > 60000)
+                    this.chartUDPDisp.ChartAreas[0].AxisY.Maximum = 60000;
+                if (this.chartUDPDisp.ChartAreas[0].AxisY.Minimum < -60000)
+                    this.chartUDPDisp.ChartAreas[0].AxisY.Minimum = -60000;
+            }
+            catch { }
+        }
+
+       
     }
 }
